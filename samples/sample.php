@@ -1,0 +1,1 @@
+<?php echo "Is this message being rendered?"; ?>

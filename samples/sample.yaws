@@ -1,0 +1,5 @@
+<html>
+<erl>
+out(_Arg) -> {html, "hello"}.
+</erl>
+</html>

