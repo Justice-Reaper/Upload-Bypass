@@ -1,8 +1,8 @@
-# Shellforge
+# Upload-Bypass
 
-`shellforge.py` generates a wordlist of candidate filenames for testing file-upload filters
+`upload-bypass.py` generates a wordlist of candidate filenames for testing file-upload filters
 
-It applies a wide range of filename bypass techniques — double extension, reverse double extension, case shuffle, URL-encoded dots, null-byte cutoffs, name overflow, path traversal, trailing characters, IIS wildcard characters, slash-in-extension, RTL override and NTFS ADS — and prints the resulting names, one per line, ready to load into your fuzzer
+It applies a wide range of filename bypass techniques. Double extension, reverse double extension, case shuffle, URL-encoded dots, null-byte cutoffs, name overflow, path traversal, trailing characters, IIS wildcard characters, slash-in-extension, RTL override and NTFS ADS. And prints the resulting names, one per line, ready to load into your fuzzer
 
 It only generates names, never uploads anything and makes no network requests. The workflow is:
 
@@ -12,25 +12,25 @@ It only generates names, never uploads anything and makes no network requests. T
 
 ## Why
 
-Checking which of the hundreds of filename permutations a filter lets through is tedious by hand (a single `-E php -A jpg` run yields ~750 names), so `shellforge` produces them all in one pass, letting you brute-force them and only hand-test the ones that upload
+Checking which of the hundreds of filename permutations a filter lets through is tedious by hand (a single `-E php -A jpg` run yields ~750 names), so `Upload-Bypass` produces them all in one pass, letting you brute-force them and only hand-test the ones that upload
 
 ## Usage
 
 ```bash
-python3 shellforge.py -E php -A jpeg                              # php names, allowed format jpeg
-python3 shellforge.py -E php -A png -o names.txt                  # save to a file
-python3 shellforge.py -E jar -A jpeg                              # a single/custom extension
-python3 shellforge.py -E php -A jpeg,png                          # several allowed formats
-python3 shellforge.py --all-extensions --all-allowed-extensions   # everything
-python3 shellforge.py --list-extensions                           # show the executable extensions
-python3 shellforge.py --list-allowed-extensions                   # show the allowed formats
-python3 shellforge.py -E php -A gif --overflow-length 236         # upload-by-URL / wget truncation trick
+python3 upload-bypass.py -E php -A jpeg                              # php names, allowed format jpeg
+python3 upload-bypass.py -E php -A png -o names.txt                  # save to a file
+python3 upload-bypass.py -E jar -A jpeg                              # a single/custom extension
+python3 upload-bypass.py -E php -A jpeg,png                          # several allowed formats
+python3 upload-bypass.py --all-extensions --all-allowed-extensions   # everything
+python3 upload-bypass.py --list-extensions                           # show the executable extensions
+python3 upload-bypass.py --list-allowed-extensions                   # show the allowed formats
+python3 upload-bypass.py -E php -A gif --overflow-length 236         # upload-by-URL / wget truncation trick
 ```
 
 ## Help
 
 ```text
-usage: shellforge.py [-h] [-E EXTENSION] [--all-extensions] [--list-extensions] [--overflow-length N] [-A EXTENSION] [--all-allowed-extensions] [--list-allowed-extensions] [-n FILENAME] [-o OUTPUT]
+usage: upload-bypass.py [-h] [-E EXTENSION] [--all-extensions] [--list-extensions] [--overflow-length N] [-A EXTENSION] [--all-allowed-extensions] [--list-allowed-extensions] [-n FILENAME] [-o OUTPUT]
 
 general:
   -h, --help                     Show this help message
@@ -84,7 +84,7 @@ Ready-to-use files to serve once you know which extension gets through, drop the
 | File | What it is |
 | --- | --- |
 | `webshell.php` / `.asp` / `.aspx` / `.jsp` / `.cfm` / `.pl` / `.py` / `.rb` / `.js` / `.yaws` | Command webshell per language (`?cmd=id`); `.cfm` is real ColdFusion via `<cfexecute>`, `.js` is Node.js, `.yaws` is Erlang/Yaws |
-| `webshell.war` | Java webshell — a WAR (zip containing a JSP) that Tomcat/JBoss auto-deploys to `/webshell/index.jsp?cmd=id` |
+| `webshell.war` | Java webshell. A WAR (zip containing a JSP) that Tomcat/JBoss auto-deploys to `/webshell/index.jsp?cmd=id` |
 | `webshell-script.php` | PHP webshell using `<script language="php">` (bypasses `<?php` filtering) |
 | `polyglot.jpg` / `.png` / `.gif` | Valid image (JPEG/PNG/GIF) that also runs as PHP, host it under a bypass name like `shell.php.jpg` |
 | `xxe.svg` | SVG with an XXE payload that reads `/etc/passwd` |
@@ -102,4 +102,4 @@ Clean, harmless example files of every format (`sample.jpg`, `sample.png`, `samp
 
 ## Author & License
 
-shellforge by **justice-reaper** — released under the [MIT License](LICENSE): free to use, modify and distribute, provided the copyright notice is kept
+Upload-Bypass by **justice-reaper**. Released under the [MIT License](LICENSE): free to use, modify and distribute, provided the copyright notice is kept
