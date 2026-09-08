@@ -170,7 +170,7 @@ def main():
     if args.output:
         with open(args.output, "w") as f:
             f.write(text)
-        print(f"Saved to {args.output}")
+        print(f"[*] Content saved to {args.output}")
     else:
         sys.stdout.write(text)
 
