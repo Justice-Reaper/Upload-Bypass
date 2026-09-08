@@ -30,7 +30,7 @@ NULL_BYTES = ['\x00', ";", "%20", "%0a", "%00", "%0d%0a", "/", ".\\", ".", "....
 
 class HelpFormatter(argparse.HelpFormatter):
     def __init__(self, prog):
-        super().__init__(prog, max_help_position=40, width=200)
+        super().__init__(prog, max_help_position=40, width=160)
 
     def add_argument(self, action):
         super().add_argument(action)
@@ -39,6 +39,32 @@ class HelpFormatter(argparse.HelpFormatter):
 
 def capitalise_random(word):
     return "".join(random.choice([c.upper(), c.lower()]) for c in word)
+
+
+def dedup(items):
+    seen, ordered = set(), []
+    for i in items:
+        if i not in seen:
+            seen.add(i)
+            ordered.append(i)
+    return ordered
+
+
+BYPASS_TOKENS = [t for t in dedup(
+    TRAILING + NULL_BYTES + [
+        "%2e", "%252e",
+        "::$data", "::$data.",
+        "%E2%80%AE",
+        "^", "\\",
+        "../", "..%2f",
+    ]
+) if t != "\x00"]
+
+
+def write_lines(path, items, label):
+    with open(path, "w") as f:
+        f.write("\n".join(items) + "\n")
+    print(f"[*] {label} ({len(items)}) saved to '{path}'")
 
 
 def build_names(exts, allowed_list, base, is_php, overflow):
@@ -107,21 +133,29 @@ def main():
 
     g_ext = ap.add_argument_group("executable extension")
     g_ext.add_argument("-E", "--extension", default=None, metavar="EXTENSION",
-                       help="Extension of the file you want to execute, a family or comma-separated (e.g. php or jar,war), required unless --all-extensions")
+                       help="Extension of the file you want to execute, a family or comma-separated (e.g. php or jar,war)")
     g_ext.add_argument("--all-extensions", action="store_true",
                        help="Use every available executable extension to build the wordlist")
     g_ext.add_argument("--list-extensions", action="store_true",
                        help="List the available extensions")
+    g_ext.add_argument("--save-extensions", default=None, metavar="FILE",
+                       help="Save the executable extensions as a flat list (one per line)")
     g_ext.add_argument("--overflow-length", type=int, default=255, metavar="N",
                        help="Truncation length for the name-overflow trick (e.g. 255 filesystem, 236 wget), default 255")
 
     g_allow = ap.add_argument_group("allowed extension")
     g_allow.add_argument("-A", "--allowed", default=None, metavar="EXTENSION",
-                         help="Extension the app accepts, one or comma-separated (e.g. jpeg or jpeg,png), required unless --all-allowed-extensions")
+                         help="Extension the app accepts, one or comma-separated (e.g. jpeg or jpeg,png)")
     g_allow.add_argument("--all-allowed-extensions", action="store_true",
                          help="Use every available allowed extension to build the wordlist")
     g_allow.add_argument("--list-allowed-extensions", action="store_true",
                          help="List the allowed extensions")
+    g_allow.add_argument("--save-allowed-extensions", default=None, metavar="FILE",
+                         help="Save the allowed extensions as a flat list (one per line)")
+
+    g_byp = ap.add_argument_group("bypasses")
+    g_byp.add_argument("--save-bypasses", default=None, metavar="FILE",
+                       help="Save the bypass tokens (%%00, %%2e, ::$data, ...) as a flat list, one per line")
 
     g_out = ap.add_argument_group("output")
     g_out.add_argument("-n", "--filename", default="shell", metavar="FILENAME",
@@ -140,17 +174,28 @@ def main():
         print(", ".join(EXTENSIONS["allow_list"]))
         return
 
+    all_exec = dedup(e for fam in families for e in EXTENSIONS[fam])
+
+    did_bare = False
+    if args.save_extensions:
+        write_lines(args.save_extensions, all_exec, "Executable extensions")
+        did_bare = True
+    if args.save_allowed_extensions:
+        write_lines(args.save_allowed_extensions, EXTENSIONS["allow_list"], "Allowed extensions")
+        did_bare = True
+    if args.save_bypasses:
+        write_lines(args.save_bypasses, BYPASS_TOKENS, "Bypass tokens")
+        did_bare = True
+    if did_bare:
+        return
+
     if not args.extension and not args.all_extensions:
         ap.error("provide -E <extension/family> or use --all-extensions  (--list-extensions to see them)")
     if not args.allowed and not args.all_allowed_extensions:
         ap.error("provide -A <allowed-extension> or use --all-allowed-extensions  (--list-allowed-extensions to see them)")
 
     if args.all_extensions:
-        exts = []
-        for fam in families:
-            for e in EXTENSIONS[fam]:
-                if e not in exts:
-                    exts.append(e)
+        exts = all_exec
         is_php = True
     elif args.extension in EXTENSIONS and args.extension not in ("allow_list", "com"):
         exts = EXTENSIONS[args.extension]
@@ -166,7 +211,6 @@ def main():
 
     names = build_names(exts, allowed_list, args.filename, is_php, args.overflow_length)
     text = "\n".join(names) + "\n"
-
     if args.output:
         with open(args.output, "w") as f:
             f.write(text)

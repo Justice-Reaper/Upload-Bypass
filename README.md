@@ -10,6 +10,8 @@ It only generates names, never uploads anything and makes no network requests. T
 2. fuzz the upload endpoint to find which filenames get through
 3. serve one of the ready-made payloads from `payloads/` at an accepted filename
 
+It can also export flat, one-per-line lists ready to load into Burp Intruder: the bypass tokens like %00 / %2e / ::$data (`--save-bypasses`), the executable extensions (`--save-extensions`) and the allowed formats (`--save-allowed-extensions`)
+
 ## Why
 
 Checking which of the hundreds of filename permutations a filter lets through is tedious by hand (a single `-E php -A jpg` run yields ~750 names), so `Upload-Bypass` produces them all in one pass, letting you brute-force them and only hand-test the ones that upload
@@ -18,37 +20,46 @@ Checking which of the hundreds of filename permutations a filter lets through is
 
 ```bash
 python3 upload-bypass.py -E php -A jpeg                              # php names, allowed format jpeg
-python3 upload-bypass.py -E php -A png -o names.txt                  # save to a file
+python3 upload-bypass.py -E php -A png -o names.txt                  # save the wordlist to a file
 python3 upload-bypass.py -E jar -A jpeg                              # a single/custom extension
 python3 upload-bypass.py -E php -A jpeg,png                          # several allowed formats
 python3 upload-bypass.py --all-extensions --all-allowed-extensions   # everything
 python3 upload-bypass.py --list-extensions                           # show the executable extensions
 python3 upload-bypass.py --list-allowed-extensions                   # show the allowed formats
+python3 upload-bypass.py --save-bypasses tokens.txt                 # bypass tokens (%00, %2e, ::$data, ...), one per line
+python3 upload-bypass.py --save-extensions exts.txt                  # executable extensions, one per line
+python3 upload-bypass.py --save-allowed-extensions allow.txt         # allowed extensions, one per line
 python3 upload-bypass.py -E php -A gif --overflow-length 236         # upload-by-URL / wget truncation trick
 ```
 
 ## Help
 
 ```text
-usage: upload-bypass.py [-h] [-E EXTENSION] [--all-extensions] [--list-extensions] [--overflow-length N] [-A EXTENSION] [--all-allowed-extensions] [--list-allowed-extensions] [-n FILENAME] [-o OUTPUT]
+usage: upload-bypass.py [-h] [-E EXTENSION] [--all-extensions] [--list-extensions] [--save-extensions FILE] [--overflow-length N] [-A EXTENSION]
+                        [--all-allowed-extensions] [--list-allowed-extensions] [--save-allowed-extensions FILE] [--save-bypasses FILE] [-n FILENAME] [-o OUTPUT]
 
 general:
-  -h, --help                     Show this help message
+  -h, --help                      Show this help message
 
 executable extension:
-  -E, --extension EXTENSION      Extension of the file you want to execute, a family or comma-separated (e.g. php or jar,war), required unless --all-extensions
-  --all-extensions               Use every available executable extension to build the wordlist
-  --list-extensions              List the available extensions
-  --overflow-length N            Truncation length for the name-overflow trick (e.g. 255 filesystem, 236 wget), default 255
+  -E, --extension EXTENSION       Extension of the file you want to execute, a family or comma-separated (e.g. php or jar,war)
+  --all-extensions                Use every available executable extension to build the wordlist
+  --list-extensions               List the available extensions
+  --save-extensions FILE          Save the executable extensions as a flat list (one per line)
+  --overflow-length N             Truncation length for the name-overflow trick (e.g. 255 filesystem, 236 wget), default 255
 
 allowed extension:
-  -A, --allowed EXTENSION        Extension the app accepts, one or comma-separated (e.g. jpeg or jpeg,png), required unless --all-allowed-extensions
-  --all-allowed-extensions       Use every available allowed extension to build the wordlist
-  --list-allowed-extensions      List the allowed extensions
+  -A, --allowed EXTENSION         Extension the app accepts, one or comma-separated (e.g. jpeg or jpeg,png)
+  --all-allowed-extensions        Use every available allowed extension to build the wordlist
+  --list-allowed-extensions       List the allowed extensions
+  --save-allowed-extensions FILE  Save the allowed extensions as a flat list (one per line)
+
+bypasses:
+  --save-bypasses FILE            Save the bypass tokens (%00, %2e, ::$data, ...) as a flat list, one per line
 
 output:
-  -n, --filename FILENAME        Base filename (e.g. -n avatar), default shell
-  -o, --output OUTPUT            Save the list to a file (e.g. -o names.txt), otherwise printed to stdout
+  -n, --filename FILENAME         Base filename (e.g. -n avatar), default shell
+  -o, --output OUTPUT             Save the list to a file (e.g. -o names.txt), otherwise printed to stdout
 ```
 
 ## Executable extensions (`-E`)
