@@ -1,4 +1,4 @@
-# shellforge
+# Shellforge
 
 `shellforge.py` generates a wordlist of candidate filenames for testing file-upload filters
 
